@@ -1,0 +1,114 @@
+# Databricks Asset Bundle root configuration file.
+# This file controls the DAB project name, included resources, variables, and deployment targets.
+
+bundle:
+  # Project/bundle name used by Databricks CLI during validate, deploy, and run.
+  name: enterprise_azure_databricks_lakehouse_dab
+
+# Include modular resource YAML files.
+# This keeps the root file clean and avoids one huge YAML file.
+include:
+  - resources/jobs/*.yml
+  - resources/clusters/*.yml
+  - resources/permissions/*.yml
+  - resources/variables/*.yml
+
+# Reusable variables used by jobs, clusters, and workflows.
+variables:
+  catalog_name:
+    description: Unity Catalog catalog name for each environment
+    default: hr_dev
+
+  bronze_schema:
+    description: Bronze schema name
+    default: bronze
+
+  silver_schema:
+    description: Silver schema name
+    default: silver
+
+  gold_schema:
+    description: Gold schema name
+    default: gold
+
+  audit_schema:
+    description: Audit schema name
+    default: audit
+
+  volume_name:
+    description: UC volume name for source files
+    default: landing_volume
+
+  small_node_type:
+    description: Small Azure VM node type for job clusters
+    default: Standard_DS3_v2
+
+  medium_node_type:
+    description: Medium Azure VM node type for job clusters
+    default: Standard_DS4_v2
+
+# Deployment targets/environments.
+targets:
+  # Development workspace deployment.
+  dev:
+    mode: development
+    default: true
+
+    workspace:
+      # Workspace URL comes from local environment variable or GitHub Actions secret.
+      host: ${env.DATABRICKS_HOST_DEV}
+
+      # In dev, deploy under current user's workspace path.
+      root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}
+
+    variables:
+      catalog_name: hr_dev
+      bronze_schema: bronze
+      silver_schema: silver
+      gold_schema: gold
+      audit_schema: audit
+      volume_name: landing_volume
+      small_node_type: Standard_DS3_v2
+      medium_node_type: Standard_DS4_v2
+
+  # QA deployment target.
+  qa:
+    mode: production
+
+    workspace:
+      host: ${env.DATABRICKS_HOST_QA}
+
+      # QA deployment goes to shared workspace path.
+      root_path: /Workspace/Shared/.bundle/${bundle.name}/${bundle.target}
+
+    variables:
+      catalog_name: hr_qa
+      bronze_schema: bronze
+      silver_schema: silver
+      gold_schema: gold
+      audit_schema: audit
+      volume_name: landing_volume
+      small_node_type: Standard_DS3_v2
+      medium_node_type: Standard_DS4_v2
+
+  # Production deployment target.
+  prod:
+    mode: production
+
+    workspace:
+      host: ${env.DATABRICKS_HOST_PROD}
+
+      # Production deployment goes to shared workspace path.
+      root_path: /Workspace/Shared/.bundle/${bundle.name}/${bundle.target}
+
+    variables:
+      catalog_name: hr_prod
+      bronze_schema: bronze
+      silver_schema: silver
+      gold_schema: gold
+      audit_schema: audit
+      volume_name: landing_volume
+
+      # Production uses larger compute values.
+      small_node_type: Standard_DS4_v2
+      medium_node_type: Standard_DS5_v2
